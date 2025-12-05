@@ -62,9 +62,19 @@ contract FundMe {
         require(convertEthToUsd(address(this).balance) >= TARGET, "Target is not reached");
         require(msg.sender == owner, "this function can only be called by owner");
         //transfer
-        payable(msg.sender).transfer(address(this).balance);
+        //payable(msg.sender).transfer(address(this).balance);
         //send
         //call
-         
+        bool success;
+        (success,) = payable(msg.sender).call{value: address(this).balance}("");
+        require(success, "transfer tx failed");
+    }
+
+    function refund() external {
+        require(convertEthToUsd(address(this).balance) < TARGET, "Target is reached");
+        require(fundersToAmount[msg.sender] != 0, "there is no fund for you");
+        bool success;
+        (success,) = payable(msg.sender).call{value: fundersToAmount[msg.sender]}("");
+        require(success, "transfer tx failed");
     }
 }
