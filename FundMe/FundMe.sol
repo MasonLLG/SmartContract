@@ -68,6 +68,7 @@ contract FundMe {
         bool success;
         (success,) = payable(msg.sender).call{value: address(this).balance}("");
         require(success, "transfer tx failed");
+        fundersToAmount[msg.sender] = 0;
     }
 
     function refund() external {
@@ -76,5 +77,6 @@ contract FundMe {
         bool success;
         (success,) = payable(msg.sender).call{value: fundersToAmount[msg.sender]}("");
         require(success, "transfer tx failed");
+        fundersToAmount[msg.sender] = 0;
     }
 }
