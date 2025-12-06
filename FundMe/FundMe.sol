@@ -20,16 +20,19 @@ contract FundMe {
     address public owner;
 
     uint256 deploymentTimestamp;
-    uint256 lockTime;
+    uint256 lockTime ;
 
-    constructor() {
+    constructor(uint256 _lockTime) {
         // sepolia testnet
         dataFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         owner = msg.sender;
+        deploymentTimestamp = block.timestamp;
+        lockTime = _lockTime;
     }
 
     function fund() external payable {
         require(convertEthToUsd(msg.value) >= MINIMUM_VALUE, "Send more ETH");
+        require(block.timestamp < deploymentTimestamp + lockTime, "window is closed");
         fundersToAmount[msg.sender] = msg.value;
     }
 
@@ -53,14 +56,12 @@ contract FundMe {
         return ethAmount * ethPrice / ( 10**8 );
     }
 
-    function transferOwnership(address newOwner) public {
-        require(msg.sender == owner, "this function can only be called by owner");
+    function transferOwnership(address newOwner) public onlyOwner{
         owner = newOwner;
     }
 
-    function getFund() external {
+    function getFund() external windowClosed onlyOwner{
         require(convertEthToUsd(address(this).balance) >= TARGET, "Target is not reached");
-        require(msg.sender == owner, "this function can only be called by owner");
         //transfer
         //payable(msg.sender).transfer(address(this).balance);
         //send
@@ -71,12 +72,22 @@ contract FundMe {
         fundersToAmount[msg.sender] = 0;
     }
 
-    function refund() external {
+    function refund() external windowClosed{
         require(convertEthToUsd(address(this).balance) < TARGET, "Target is reached");
         require(fundersToAmount[msg.sender] != 0, "there is no fund for you");
         bool success;
         (success,) = payable(msg.sender).call{value: fundersToAmount[msg.sender]}("");
         require(success, "transfer tx failed");
         fundersToAmount[msg.sender] = 0;
+    }
+
+    modifier windowClosed() {
+         require(block.timestamp >= deploymentTimestamp + lockTime, "window is not closed");
+         _;
+    } 
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "this function can only be called by owner");
+        _;
     }
 }
