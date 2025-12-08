@@ -24,7 +24,20 @@ contract FundToken {
     }
 
     // mint: 获取通证
-    function mint() {}
+    function mint(uint256 amountToMint) public {
+        balances[msg.sender] += amountToMint;
+        totalSupply += amountToMint;
+    }
+    
     // transfer： transfer通证
+    function transfer(address payee, uint256 amount) public {
+        require(balances[msg.sender] >= amount, "Insufficient balance.");
+        balances[msg.sender] -= amount;
+        balances[payee] += amount;
+    }
+
     // balanceOf: 查看某一个地址的通证数量
+    function balanceOf(address addr) public view returns(uint256){
+        return balances[addr];
+    }
 }
