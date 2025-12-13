@@ -1,0 +1,11 @@
+{
+  "name": "Gemini Star #0",
+  "description": "The first star in the Gemini constellation.",
+  "image": "ipfs://bafkreidgqkwgjflxtz7yaa3bodxrgjfrexcs47lhtgbhbu5kqazc77sbby", 
+  "attributes": [
+    {
+      "trait_type": "Brightness",
+      "value": "Dazzling"
+    }
+  ]
+}
