@@ -22,6 +22,10 @@ contract FundMe {
     uint256 deploymentTimestamp;
     uint256 lockTime ;
 
+    address erc20Addr;
+
+    bool public getFundSuccess = false;
+
     constructor(uint256 _lockTime) {
         // sepolia testnet
         dataFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
@@ -70,6 +74,7 @@ contract FundMe {
         (success,) = payable(msg.sender).call{value: address(this).balance}("");
         require(success, "transfer tx failed");
         fundersToAmount[msg.sender] = 0;
+        getFundSuccess = true;
     }
 
     function refund() external windowClosed{
@@ -79,6 +84,15 @@ contract FundMe {
         (success,) = payable(msg.sender).call{value: fundersToAmount[msg.sender]}("");
         require(success, "transfer tx failed");
         fundersToAmount[msg.sender] = 0;
+    }
+
+    function setFunderToAmount(address funder, uint256 amountToUpdate) external {
+        require(msg.sender == erc20Addr,"");
+        fundersToAmount[funder] = amountToUpdate;
+    }
+
+    function setErc20Addr(address _erc20Addr) public onlyOwner{
+        erc20Addr = _erc20Addr;
     }
 
     modifier windowClosed() {
