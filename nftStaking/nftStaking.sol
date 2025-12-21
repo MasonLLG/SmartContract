@@ -18,6 +18,9 @@ contract nftStaking is Ownable{
     }
     //   - 需要一个 mapping(uint256 => Stake) 来通过 tokenId 查找质押信息。
     mapping (uint256 => Stake) stakingInfo;
+
+    event Staked(address indexed owner, uint256 indexed tokenId);
+    event Withdrawn(address indexed owner, uint256 indexed tokenId, uint256 reward);
     
     // - constructor: 构造函数，需要传入并保存 NFT 和奖励代币的合约地址。
     constructor(address _nftAddress, address _rewardTokenAddress, address initialOwner) Ownable(initialOwner) {
@@ -32,7 +35,38 @@ contract nftStaking is Ownable{
             owner: msg.sender,
             timestamp: block.timestamp
         });
+        emit Staked(msg.sender, _tokenId);
     }
 
-    
+    function earned(uint256 _tokenId) public view returns (uint256) {
+        Stake memory stakeRecord = stakingInfo[_tokenId];
+        if (stakeRecord.owner == address(0)) {
+            return 0;
+        }
+        uint256 duration = block.timestamp - stakeRecord.timestamp;
+        return duration * REWARD_RATE_PER_SECOND;
+    }
+
+    function withdraw(uint256 _tokenId) external{
+        Stake memory stakeRecord = stakingInfo[_tokenId];
+        require(stakeRecord.owner == msg.sender, "You are not the owner of this stake");
+
+        uint256 reward = earned(_tokenId);
+
+        delete stakingInfo[_tokenId];
+
+        if (reward > 0) {
+            rewardToken.transfer(msg.sender, reward);
+        }
+
+
+        nft.safeTransferFrom(address(this),msg.sender, _tokenId);
+
+        emit Withdrawn(msg.sender, _tokenId, reward);
+        
+    }
+
+    function fund(uint256 amount) external onlyOwner {
+        rewardToken.transferFrom(msg.sender, address(this), amount);
+    }
 }
